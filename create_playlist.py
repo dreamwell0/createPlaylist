@@ -1,9 +1,8 @@
 import spotipy
 import spotipy.util as util
-import pandas as pd
 import json
 
- #Spotify APIの認証部分 username, my_id, my_secret は人によって異なる
+#Spotify APIの認証部分 username, my_id, my_secret は人によって異なる
 username = 'XXX' 
 my_id ='XXX' 
 my_secret = 'XXX' 
@@ -16,37 +15,40 @@ def main():
 
     playlists = spotify.user_playlist_create(username, '230603New')
 
-    name = 'Radiohead'
-    searchResult = spotify.search(q=name, limit=10, offset=0, type='artist', market=None)
-    artistId = searchResult['artists']['items'][0]['id']
-    print(artistId)
-    
+    f = open('230603.txt', 'r')
+    datalist = f.readlines()
 
-    # artist_idからalbumデータを取得
-    albumResults = spotify.artist_albums(artistId, limit=50, album_type='album')
-    album_datas = albumResults['items']
-    while albumResults['next']:
-        albumResults = spotify.next(albumResults)
-        album_datas.extend(albumResults['items'])
-    
-    print('全アルバム枚数:', len(album_datas))
-    album_sorted = sorted(album_datas, key=lambda x:x['release_date'], reverse=True)
+    for name in datalist:
+        if name == '\n':
+            continue
+        # 括弧より前までをArtist名とする
+        idx = name.find('(')
+        name = name[:idx]
 
-    print(album_sorted[0]['release_date'])
+        search_result = spotify.search(q=name, limit=10, offset=0, type='artist', market=None)
+        artist_Id = search_result['artists']['items'][0]['id']
+        
+        # artist_idからalbumデータを取得
+        album_results = spotify.artist_albums(artist_Id, limit=50, album_type='album')
+        album_datas = album_results['items']
+        while album_results['next']:
+            album_results = spotify.next(album_results)
+            album_datas.extend(album_results['items'])
+        
+        # 発売日の降順にソート
+        album_sorted = sorted(album_datas, key=lambda x:x['release_date'], reverse=True)
 
-    #tracks_df = AlbumId_To_TrackId(albumid_df) #アルバムIDからトラックIDを取得
+        # album_idからalbumのtrackデータを取得
+        tracks = []
+        album_tracks = spotify.album_tracks(album_sorted[0]['id'])
 
-    tracks = []
-    album_tracks = spotify.album_tracks(album_sorted[0]['id'])
+        for track in album_tracks['items']:
+            tracks.append(track['id'])
 
-    for track in album_tracks['items']:
-        tracks.append(track['id'])
-    print(tracks[0])
+        # trackデータの1曲目をプレイリストに追加
+        results = spotify.user_playlist_add_tracks(username, playlists['id'], [tracks[0]])
 
-
-
-    results = spotify.user_playlist_add_tracks(username, playlists['id'], [tracks[0]])
-    print(results)
+    f.close()
 
 if __name__ == "__main__":
     main()
