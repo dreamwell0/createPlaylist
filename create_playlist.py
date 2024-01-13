@@ -1,11 +1,12 @@
 import spotipy
 import spotipy.util as util
 import json
+import os
 
 #Spotify APIの認証部分 username, my_id, my_secret は人によって異なる
-username = 'XXX' 
-my_id ='XXX' 
-my_secret = 'XXX' 
+username = '' 
+my_id ='' 
+my_secret = '' 
 redirect_uri = 'http://localhost:8888/callback' 
 scope = 'user-library-read user-read-playback-state playlist-read-private user-read-recently-played playlist-read-collaborative playlist-modify-public playlist-modify-private'
 token = util.prompt_for_user_token(username, scope, my_id, my_secret, redirect_uri)
@@ -13,9 +14,14 @@ spotify = spotipy.Spotify(auth = token)
 
 def main():
 
-    playlists = spotify.user_playlist_create(username, '230603New')
+    dir_path = 'data/'
+    files = os.listdir(dir_path)  # ディレクトリ内のファイルリストを取得
+    files.sort(reverse=True)  # ファイルリストを降順に並び替え
+    idx = files[0].find('.')
+    playlistname = files[0][:idx] + 'New'
+    playlists = spotify.user_playlist_create(username, playlistname)
 
-    f = open('230603.txt', 'r')
+    f = open(dir_path + files[0], 'r')
     datalist = f.readlines()
 
     for name in datalist:
@@ -45,8 +51,8 @@ def main():
         for track in album_tracks['items']:
             tracks.append(track['id'])
 
-        # trackデータの1曲目をプレイリストに追加
-        results = spotify.user_playlist_add_tracks(username, playlists['id'], [tracks[0]])
+        # trackデータの1曲目,2曲目をプレイリストに追加
+        results = spotify.user_playlist_add_tracks(username, playlists['id'], [tracks[0],tracks[1]])
 
     f.close()
 
