@@ -32,6 +32,8 @@ def main():
         name = name[:idx]
 
         search_result = spotify.search(q=name, limit=10, offset=0, type='artist', market=None)
+        if(len(search_result['artists']['items']) == 0):
+            continue
         artist_Id = search_result['artists']['items'][0]['id']
         
         # artist_idからalbumデータを取得
@@ -46,13 +48,19 @@ def main():
 
         # album_idからalbumのtrackデータを取得
         tracks = []
+        if(len(album_sorted) == 0):
+            continue
+
         album_tracks = spotify.album_tracks(album_sorted[0]['id'])
 
         for track in album_tracks['items']:
             tracks.append(track['id'])
 
-        # trackデータの1曲目,2曲目をプレイリストに追加
-        results = spotify.user_playlist_add_tracks(username, playlists['id'], [tracks[0],tracks[1]])
+        # trackデータの1曲目,2曲目,3曲目をプレイリストに追加
+        if(len(tracks) < 3):
+            continue
+
+        results = spotify.user_playlist_add_tracks(username, playlists['id'], [tracks[0],tracks[1],tracks[2]])
 
     f.close()
 
